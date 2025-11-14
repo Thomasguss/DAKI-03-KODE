@@ -237,37 +237,3 @@ for container in ax.containers:
     ax.bar_label(container, fmt="%d", label_type="edge")
 plt.tight_layout()
 plt.show()
-
-# --- 12. Overordnet dødelighed <60 vs ≥60 opdelt på COVID-status og køn ---
-
-# Beregn gennemsnitlig dødelighed pr. aldersgruppe, COVID-status og køn
-overall = df.groupby(['AGE_GROUP', 'COVID_CONFIRMED', 'SEX'])['DIED'].mean().reset_index()
-overall['Dødelighed (%)'] = overall['DIED'] * 100
-overall['COVID-status'] = overall['COVID_CONFIRMED'].map({0: 'Ikke smittet', 1: 'Smittet'})
-overall['Køn'] = overall['SEX'].map({1: 'Kvinder', 2: 'Mænd'})
-
-# Kombinér COVID-status og køn i én kolonne for klarere opdeling
-overall['Gruppe'] = overall['COVID-status'] + " – " + overall['Køn']
-
-plt.figure(figsize=(10,6))
-ax = sns.barplot(
-    data=overall,
-    x='AGE_GROUP',
-    y='Dødelighed (%)',
-    hue='Gruppe',
-    errorbar=None,
-    palette='Set2',
-    dodge=True
-)
-
-plt.title("Overordnet dødelighed (%) for patienter <60 vs ≥60 opdelt på COVID-status og køn")
-plt.xlabel("Aldersgruppe")
-plt.ylabel("Dødelighed (%)")
-plt.legend(title='Gruppe', bbox_to_anchor=(1.05, 1), loc='upper left')
-for container in ax.containers:
-    ax.bar_label(container, fmt="%.1f", label_type="edge")
-plt.tight_layout()
-plt.show()
-
-
-
