@@ -341,7 +341,7 @@ class ModelManager:
 # MAIN
 # =====================================================================
 if __name__ == "__main__":
-    X_train, X_val, X_test, y_train, y_val, y_test, feature_names, numeric = prepare_data("CovidData.csv")
+    X_train, X_val, X_test, y_train, y_val, y_test, feature_names, numeric = prepare_data("C:\\Users\\thoma\\OneDrive\\Dokumenter\\DAKI\\P1\\Covid Data.csv")
 
     pre = build_preprocessor(numeric)
     X_train_p = pre.fit_transform(X_train)
