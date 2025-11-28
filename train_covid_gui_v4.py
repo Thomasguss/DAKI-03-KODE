@@ -57,24 +57,10 @@ def prepare_data(csv_path: str):
     """
 
     df = pd.read_csv(csv_path)
-    # Erstat specialkoder med NaN
-    df.replace({97: np.nan, 98: np.nan, 99: np.nan}, inplace=True)
-
-    # Kun COVID-smittede (1,2,3)
-    df = df[df["CLASIFFICATION_FINAL"].isin([1, 2, 3])]
-
-    # Døds-variabel
-    df["DATE_DIED"] = df["DATE_DIED"].astype(str)
-    df["DIED"] = (df["DATE_DIED"] != "9999-99-99").astype(int)
 
     # =======================================================
-    # Korrekt SEX-kodning:
-    # Originalt i datasættet: 1 = kvinde, 2 = mand
-    # Vi mapper til: 0 = kvinde, 1 = mand (matcher GUI)
+    # Fjern 97,98,99 *KUN* i binære kolonner – IKKE i AGE
     # =======================================================
-    df["SEX"] = df["SEX"].replace({1: 0, 2: 1})
-
-    # Øvrige binære kolonner (1=ja, 2=nej → 1/0)
     disease_cols = [
         "DIABETES",
         "HIPERTENSION",
@@ -88,14 +74,36 @@ def prepare_data(csv_path: str):
         "OTHER_DISEASE",
         "PREGNANT",
     ]
+
+    binary_all = ["SEX"] + disease_cols  # samlet liste for ét replace-call
+    df[binary_all] = df[binary_all].replace({97: np.nan, 98: np.nan, 99: np.nan})
+
+    # Kun COVID-smittede (1,2,3)
+    df = df[df["CLASIFFICATION_FINAL"].isin([1, 2, 3])]
+
+    # Dødsvariabel
+    df["DATE_DIED"] = df["DATE_DIED"].astype(str)
+    df["DIED"] = (df["DATE_DIED"] != "9999-99-99").astype(int)
+
+    # Korrekt SEX-kodning (1=kvinde, 2=mand → 0/1)
+    df["SEX"] = df["SEX"].replace({1: 0, 2: 1})
+
+    # Øvrige sygdomskolonner (1/2 → 1/0)
     for col in disease_cols:
         df[col] = df[col].replace({1: 1, 2: 0})
 
-    # Hvis graviditet mangler: sæt til 0
     df["PREGNANT"] = df["PREGNANT"].fillna(0)
 
-    # Alder som numerisk
+    # =======================================================
+    # AGE: behold 97,98,99 – ingen replace!
+    # =======================================================
     df["AGE"] = pd.to_numeric(df["AGE"], errors="coerce")
+
+    # Øvre grænse 110 år
+    df["AGE"] = df["AGE"].clip(upper=110)
+
+    # Resten af din kode fortsætter her...
+
 
     # -------------------------------------------------------
     # Alderskategorier til features

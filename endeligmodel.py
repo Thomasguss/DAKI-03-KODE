@@ -22,33 +22,35 @@ import matplotlib.pyplot as plt
 # Dataforberedelse
 # =====================================================================
 def prepare_data(csv_path: str):
-    """
-    Loader CovidData.csv, rydder op, laver komorbiditet, alder-kategorier
-    og splitter i train/val/test.
-    Returnerer: X_train, X_val, X_test, y_train, y_val, y_test, feature_names
-    """
-
     df = pd.read_csv(csv_path)
-    df.replace({97: np.nan, 98: np.nan, 99: np.nan}, inplace=True)
-    # KUN COVID-SMITTEDE (1, 2, 3)
-    df = df[df["CLASIFFICATION_FINAL"].isin([1, 2, 3])]
 
-
-    # Døds-variabel
-    df["DATE_DIED"] = df["DATE_DIED"].astype(str)
-    df["DIED"] = (df["DATE_DIED"] != "9999-99-99").astype(int)
-
-    # Binære variabler
+    # Kun fjern 97,98,99 i binære kolonner – IKKE i AGE
     binary_cols = [
         "SEX", "DIABETES", "HIPERTENSION", "OBESITY", "COPD", "ASTHMA",
         "CARDIOVASCULAR", "RENAL_CHRONIC", "INMSUPR", "TOBACCO",
         "OTHER_DISEASE", "PREGNANT"
     ]
+
+    df[binary_cols] = df[binary_cols].replace({97: np.nan, 98: np.nan, 99: np.nan})
+
+    # KUN COVID-SMITTEDE (1, 2, 3)
+    df = df[df["CLASIFFICATION_FINAL"].isin([1, 2, 3])]
+
+    # Døds-variabel
+    df["DATE_DIED"] = df["DATE_DIED"].astype(str)
+    df["DIED"] = (df["DATE_DIED"] != "9999-99-99").astype(int)
+
+    # Binære variabler til 0/1
     for col in binary_cols:
         df[col] = df[col].replace({1: 1, 2: 0})
 
     df["PREGNANT"] = df["PREGNANT"].fillna(0)
+
+    # AGE: behold 97, 98, 99, konverter til tal
     df["AGE"] = pd.to_numeric(df["AGE"], errors="coerce")
+
+    # Sæt øvre grænse 110 år
+    df["AGE"] = df["AGE"].clip(upper=110)
 
     # Alders-kategorier
     df["AGE_CAT"] = pd.cut(
@@ -75,8 +77,10 @@ def prepare_data(csv_path: str):
     numeric = ["AGE"]
     feature_names = numeric + categorical
 
+    # Fjern rækker med manglende værdier i features + DIED
     mask = df[categorical + numeric + ["DIED"]].notna().all(axis=1)
     clean = df[mask]
+
 # ============================================
 # 🔵  KØNSBALANCERING (indsæt dette)
 # ============================================
@@ -431,7 +435,7 @@ if __name__ == "__main__":
     # 1) Forbered data
     # -------------------------------------------------------------
     X_train, X_val, X_test, y_train, y_val, y_test, feature_names, numeric = prepare_data(
-        "C:\\Users\\thoma\\OneDrive\\Dokumenter\\DAKI\\P1\\Covid Data.csv"
+        "CovidData.csv"
     )
 
     # Fælles preprocessor til alle modeller
