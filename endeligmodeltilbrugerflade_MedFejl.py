@@ -1,11 +1,14 @@
 import pandas as pd
 import numpy as np
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.compose import ColumnTransformer
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from catboost import CatBoostClassifier
+
 from sklearn.metrics import (
     roc_auc_score,
     confusion_matrix,
@@ -15,6 +18,7 @@ from sklearn.metrics import (
     recall_score,
     roc_curve
 )
+
 import matplotlib.pyplot as plt
 import joblib
 
@@ -25,8 +29,6 @@ import joblib
 def prepare_data(csv_path: str):
     df = pd.read_csv(csv_path)
     df.replace({97: np.nan, 98: np.nan, 99: np.nan}, inplace=True)
-    # KUN COVID-SMITTEDE (1, 2, 3)
-    df = df[df["CLASIFFICATION_FINAL"].isin([1, 2, 3])]
 
     df["DATE_DIED"] = df["DATE_DIED"].astype(str)
     df["DIED"] = (df["DATE_DIED"] != "9999-99-99").astype(int)
@@ -69,26 +71,7 @@ def prepare_data(csv_path: str):
 
     mask = df[categorical+numeric+["DIED"]].notna().all(axis=1)
     clean = df[mask]
-    # ============================================
-# 🔵  KØNSBALANCERING (indsæt dette)
-# ============================================
-    df_male_dead     = clean[(clean.SEX==1) & (clean.DIED==1)]
-    df_male_alive    = clean[(clean.SEX==1) & (clean.DIED==0)]
-    df_female_dead   = clean[(clean.SEX==0) & (clean.DIED==1)]
-    df_female_alive  = clean[(clean.SEX==0) & (clean.DIED==0)]
 
-    n = min(len(df_male_dead), len(df_male_alive),
-            len(df_female_dead), len(df_female_alive))
-
-    balanced_df = pd.concat([
-        df_male_dead.sample(n, random_state=42),
-        df_male_alive.sample(n, random_state=42),
-        df_female_dead.sample(n, random_state=42),
-        df_female_alive.sample(n, random_state=42)
-    ])
-
-    clean = balanced_df.sample(frac=1, random_state=42)
-# ============================================
     X = clean[categorical+numeric]
     y = clean["DIED"]
 
@@ -358,7 +341,7 @@ class ModelManager:
 # MAIN
 # =====================================================================
 if __name__ == "__main__":
-    X_train, X_val, X_test, y_train, y_val, y_test, feature_names, numeric = prepare_data("C:\\Users\\thoma\\OneDrive\\Dokumenter\\DAKI\\P1\\Covid Data.csv")
+    X_train, X_val, X_test, y_train, y_val, y_test, feature_names, numeric = prepare_data("CovidData.csv")
 
     pre = build_preprocessor(numeric)
     X_train_p = pre.fit_transform(X_train)
